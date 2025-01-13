@@ -62,16 +62,13 @@ fn part1(lines: [][]const u8) u16 {
     return answer;
 }
 
-fn isSafeWithSingleBadInterval(line: []const u8, allocator: std.mem.Allocator) !bool {
+fn isSafeWithSingleBadInterval(line: []const u8) bool {
     if (isSafeLine(line))
         return true;
 
-    // The index we're skipping.
-    var subarray = try std.ArrayList(u8).initCapacity(allocator, line.len - 1);
-    defer subarray.deinit();
-
-    // We don't care about this data, but just need to populate the underlying array;
-    try subarray.insertSlice(0, line[1..]);
+    // Ahead of time, I know that we have at max 8 items in `line`.
+    // So the subarray can have a maximum of 7 items.
+    var subarray: [7]u8 = undefined;
 
     // Permute over every subarray that excludes the item at line[skipped_index].
     // Start at 0 and move forward.
@@ -85,22 +82,22 @@ fn isSafeWithSingleBadInterval(line: []const u8, allocator: std.mem.Allocator) !
         for (0.., line[0..]) |i, num| {
             if (i == index_to_skip)
                 continue;
-            subarray.items[current_insert_index] = num;
+            subarray[current_insert_index] = num;
             current_insert_index += 1;
         }
 
-        if (isSafeLine(subarray.items))
+        if (isSafeLine(subarray[0..current_insert_index]))
             return true;
     }
 
     return false;
 }
 
-fn part2(lines: [][]const u8, allocator: std.mem.Allocator) !u16 {
+fn part2(lines: [][]const u8) u16 {
     var answer: u16 = 0;
 
     for (lines[0..]) |line| {
-        if (try isSafeWithSingleBadInterval(line, allocator))
+        if (isSafeWithSingleBadInterval(line))
             answer += 1;
     }
     return answer;
@@ -152,7 +149,7 @@ test "Examples" {
         var answer: u8 = 0;
 
         for (lines[0..]) |line| {
-            if (try isSafeWithSingleBadInterval(line, testing.allocator))
+            if (isSafeWithSingleBadInterval(line))
                 answer += 1;
         }
         try testing.expectEqual(4, answer);
@@ -179,5 +176,5 @@ test "Day 2" {
 
     std.debug.print("\nDay 2:\n======\n", .{});
     std.debug.print("Part 1: {d}\n", .{part1(&lines)});
-    std.debug.print("Part 2: {d}\n", .{try part2(&lines, testing.allocator)});
+    std.debug.print("Part 2: {d}\n", .{part2(&lines)});
 }
